@@ -4,6 +4,8 @@ indexing-settings:
       name: Playback
     - url: https://www.svetlovka.ru/
       name: Svetlovka
+    - url: https://www.lutherancathedral.ru/
+      name: Lutherane
 
 server:
   port: 8080

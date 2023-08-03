@@ -36,7 +36,7 @@ public class GetLemma {
         HashMap<String, Integer> map = new HashMap<>();
 
         for (String word : splitPhrase) {
-            lemmasListFromSomeText = getLemmasListFromSomeText(word);
+            lemmasListFromSomeText = getLemmaListFromSomeText(word);
             for (String cleanedLemma : lemmasListFromSomeText) {
                 if (map.containsKey(cleanedLemma)) {
                     map.put(cleanedLemma, map.get(cleanedLemma) + 1);
@@ -53,7 +53,7 @@ public class GetLemma {
         return List.of(someText.trim().split("[^а-яА-Я]+"));
     }
 
-    public static List<String> getLemmasListFromSomeText(String word) {
+    public static List<String> getLemmaListFromSomeText(String word) {
         List<String> lemmaListFromSomeText = new ArrayList<>();
         if (!word.equals("")) {
             List<String> wordBaseForms = morphology.getMorphInfo(word.toLowerCase());

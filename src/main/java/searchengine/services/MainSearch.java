@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.model.*;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,22 +74,16 @@ public class MainSearch {
                     unsortedMapByFrecuency.put(lemmaFromDB.getLemma(), lemmaFromDB.getFrequency());
                 }
             } else {
-                putLemmasToMapByCommonFrequencyNew(cleanedLemma);
+                putLemmaToMapByCommonFrequency(cleanedLemma);
             }
         });
 
         if (!isNullOrEmptyMap(getSortedMapByFrequency())) {
-
             Map.Entry firstValue = sortedMapByFrecuency.entrySet().stream().findFirst().get();
-            List<Lemma> lemmaListFromDbByName;
-            if (!isNullOrEmptySiteFromPopUpList(site)) {
-                lemmaListFromDbByName = lemmaRepository.lemmasFromDBbyNameAndSite(firstValue.getKey().toString(), siteId);
-            } else {
-                lemmaListFromDbByName = lemmaRepository.lemmasFromDB(firstValue.getKey().toString());
-            }
-            fillingUnSortedMapByRelevance(retainPagesList(lemmaListFromDbByName));
+            List<Lemma> lemmaListFromDbByName = !isNullOrEmptySiteFromPopUpList(site) ? lemmaRepository.lemmaFromDBbyNameAndSite(firstValue.getKey().toString(), siteId) : lemmaRepository.lemmaFromDB(firstValue.getKey().toString());
+            fillUnsortedMapByRelevance(getRetainedPageList(lemmaListFromDbByName));
         }
-        getSortedListOfPagesByRelevance(unSortedMapByRelevance);
+        sortMapOfPagesByRelevance(unSortedMapByRelevance);
 
     }
 
@@ -110,14 +103,14 @@ public class MainSearch {
     public static List<String> getListFromQuery(List<String> splitPhraseFromQuery) {
         List<String> lemmaListFromQuery = new ArrayList<>();
         for (String w : splitPhraseFromQuery) {
-            lemmaListFromQuery.addAll(GetLemma.getLemmasListFromSomeText(w));
+            lemmaListFromQuery.addAll(GetLemma.getLemmaListFromSomeText(w));
         }
         return lemmaListFromQuery;
     }
 
-    public void putLemmasToMapByCommonFrequencyNew(String cleanedLemma) {
+    public void putLemmaToMapByCommonFrequency(String cleanedLemma) {
 
-        List<Lemma> lemmaList = lemmaRepository.lemmasFromDB(cleanedLemma);
+        List<Lemma> lemmaList = lemmaRepository.lemmaFromDB(cleanedLemma);
         if (!(lemmaList.size() == 0)) {
             int commonFrequency = lemmaRepository.commonFrequencyForAllSites(cleanedLemma);
             unsortedMapByFrecuency.put(cleanedLemma, commonFrequency);
@@ -125,21 +118,35 @@ public class MainSearch {
 
     }
 
-    public List<Page> retainPagesList(List<Lemma> lemmaListFromDbByName) {
+    public Map<String, Integer> getSortedMapByFrequency() {
+        sortedMapByFrecuency = unsortedMapByFrecuency.entrySet().stream()
+                .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> {
+                            throw new AssertionError();
+                        },
+                        LinkedHashMap::new
+                ));
+        return sortedMapByFrecuency;
+    }
+
+    public List<Page> getRetainedPageList(List<Lemma> lemmaListFromDbByName) {
         List<Page> pageListForFirstLemma = new ArrayList<>();
 
         for (Lemma firstLemmaFromDB : lemmaListFromDbByName) {
-            pageListForFirstLemma.addAll(pageRepository.pagesListByLemmaID(firstLemmaFromDB.getId()));
+            pageListForFirstLemma.addAll(pageRepository.pageListByLemmaID(firstLemmaFromDB.getId()));
         }
 
         for (Map.Entry<String, Integer> entry : sortedMapByFrecuency.entrySet()) {
             String lemmaName = entry.getKey();
-            pageListForFirstLemma.retainAll(pageRepository.pagesListByLemmaName(lemmaName));
+            pageListForFirstLemma.retainAll(pageRepository.pageListByLemmaName(lemmaName));
         }
         return pageListForFirstLemma;
     }
 
-    public void fillingUnSortedMapByRelevance(List<Page> pageListForFirstLemma) {
+    public void fillUnsortedMapByRelevance(List<Page> pageListForFirstLemma) {
 
         List<Float> listRelevance = new ArrayList<>();
 
@@ -160,21 +167,7 @@ public class MainSearch {
         }
     }
 
-    public Map<String, Integer> getSortedMapByFrequency() {
-        sortedMapByFrecuency = unsortedMapByFrecuency.entrySet().stream()
-                .sorted(Comparator.comparingInt(Map.Entry::getValue))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (a, b) -> {
-                            throw new AssertionError();
-                        },
-                        LinkedHashMap::new
-                ));
-        return sortedMapByFrecuency;
-    }
-
-    public void getSortedListOfPagesByRelevance(HashMap<Page, Float> unSortedMapByRelevance) {
+    public void sortMapOfPagesByRelevance(HashMap<Page, Float> unSortedMapByRelevance) {
 
         sortedMapByRelevance = unSortedMapByRelevance.entrySet().stream()
                 .sorted(Comparator.comparingDouble(e -> -e.getValue()))
@@ -201,7 +194,7 @@ public class MainSearch {
         return title;
     }
 
-    public String getSnippet(Page page, String query) throws IOException {
+    public String getSnippet(Page page, String query) {
 
         String text = getTextFromPageContent(page.getContent());
         List<String> splitPhraseFromText = GetLemma.getSplitPhrase(text);
@@ -210,7 +203,7 @@ public class MainSearch {
         List<Snippet> snippetList = new ArrayList<>();
 
         for (String w : splitPhraseFromQuery) {
-            lemmasListFromQuery.addAll(GetLemma.getLemmasListFromSomeText(w));
+            lemmasListFromQuery.addAll(GetLemma.getLemmaListFromSomeText(w));
         }
 
         newSnippet = mainLoopWithSnippet(splitPhraseFromText, text, lemmasListFromQuery, splitPhraseFromQuery, snippetList);
@@ -224,27 +217,28 @@ public class MainSearch {
             String word = splitPhraseFromText.get(k);
             startWordPosition = (k == 0) ? text.indexOf(word) : text.indexOf(word, startWordPosition);
             endWordPosition = startWordPosition + splitPhraseFromText.get(k).length();
-            List<String> lemmasListFromSomeText = GetLemma.getLemmasListFromSomeText(word);
+            List<String> lemmasListFromSomeText = GetLemma.getLemmaListFromSomeText(word);
 
             for (String s : lemmasListFromSomeText) {
                 for (int i = 0; i < lemmasListFromQuery.size(); i++) {
-                    if (s.equalsIgnoreCase(lemmasListFromQuery.get(i))) {
-                        int difference = 0;
-                        if (splitPhraseFromQuery.size() == 1) {
-                            startSnippetFirst = startWordPosition;
-                            endSnippetLast = endWordPosition;
-                        } else {
-                            ifIEqualsZero(i);
-                            if (i != 0) {
-                                difference = startWordPosition - endPositionPreviousWord;
-                            }
-                            ifDifferenceMoreThanOne(difference);
-                            ifDifferenceEqualsOne(difference, i);
-                            ifDifferenceNotEqualsOneAnd(difference, i, lemmasListFromQuery);
-                            count++;
-                            getSnippetObject(snippetList, count, startSnippetFirst, endSnippetLast, i, word, startWordPosition, endWordPosition, difference);
-                            endPositionPreviousWord = endWordPosition;
+                    if (!s.equalsIgnoreCase(lemmasListFromQuery.get(i))) {
+                        continue;
+                    }
+                    int difference = 0;
+                    if (splitPhraseFromQuery.size() == 1) {
+                        startSnippetFirst = startWordPosition;
+                        endSnippetLast = endWordPosition;
+                    } else {
+                        ifIEqualsZero(i);
+                        if (i != 0) {
+                            difference = startWordPosition - endPositionPreviousWord;
                         }
+                        ifDifferenceMoreThanOne(difference);
+                        ifDifferenceEqualsOne(difference, i);
+                        ifDifferenceNotEqualsOne(difference, i, lemmasListFromQuery);
+                        count++;
+                        fillSnippetList(snippetList, count, startSnippetFirst, endSnippetLast, i, word, startWordPosition, endWordPosition, difference);
+                        endPositionPreviousWord = endWordPosition;
                     }
                 }
             }
@@ -278,15 +272,15 @@ public class MainSearch {
         }
     }
 
-    public void ifDifferenceNotEqualsOneAnd(int difference, int i, List<String> lemmasListFromQuery) {
+    public void ifDifferenceNotEqualsOne(int difference, int i, List<String> lemmasListFromQuery) {
         if (difference != 1 && (i == (lemmasListFromQuery.size() - 1)) || (endSnippetLast - startSnippetFirst < 1)) {
             startSnippetFirst = middleStartPositionForSnippet;
             endSnippetLast = middleEndPositionForSnippet;
         }
     }
 
-    public void getSnippetObject(List<Snippet> snippetList, int count, int startSnippetFirst, int endSnippetLast, int i, String word,
-                                 int startWordPosition, int endWordPosition, int difference) {
+    public void fillSnippetList(List<Snippet> snippetList, int count, int startSnippetFirst, int endSnippetLast, int i, String word,
+                                int startWordPosition, int endWordPosition, int difference) {
         Snippet snippet = new Snippet();
         snippet.setCountWords(count);
         snippet.setStartSnippet(startSnippetFirst);

@@ -6,6 +6,8 @@ indexing-settings:
       name: Svetlovka
     - url: https://www.lutherancathedral.ru/
       name: Lutherane
+    - url: https://ipfran.ru/
+      name: Ipfran
 
 server:
   port: 8080

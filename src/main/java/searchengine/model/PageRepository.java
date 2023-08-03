@@ -19,7 +19,7 @@ public interface PageRepository extends CrudRepository<Page, Integer> {
             JOIN search_engine.index i on i.page_id = p.id
             JOIN search_engine.lemma l on l.id = i.lemma_id
             where l.id = ?1""", nativeQuery = true)
-    List<Page> pagesListByLemmaID(int lemmaID);
+    List<Page> pageListByLemmaID(int lemmaID);
 
     @Transactional
     @Query(value = """
@@ -27,6 +27,6 @@ public interface PageRepository extends CrudRepository<Page, Integer> {
             JOIN search_engine.index i on i.page_id = p.id
             JOIN search_engine.lemma l on l.id = i.lemma_id
             where l.lemma = ?1""", nativeQuery = true)
-    List<Page> pagesListByLemmaName(String lemma);
+    List<Page> pageListByLemmaName(String lemma);
 
 }

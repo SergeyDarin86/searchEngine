@@ -20,10 +20,10 @@ public interface LemmaRepository extends CrudRepository<Lemma, Integer> {
 
     @Transactional
     @Query(value = "SELECT * FROM lemma WHERE lemma.lemma = ?1", nativeQuery = true)
-    List<Lemma> lemmasFromDB(String lemma);
+    List<Lemma> lemmaFromDB(String lemma);
 
     @Transactional
     @Query(value = "SELECT * FROM lemma WHERE lemma.lemma = ?1 && lemma.site_id = ?2", nativeQuery = true)
-    List<Lemma> lemmasFromDBbyNameAndSite(String lemma, int siteId);
+    List<Lemma> lemmaFromDBbyNameAndSite(String lemma, int siteId);
 
 }

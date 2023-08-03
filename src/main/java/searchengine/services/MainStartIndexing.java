@@ -47,6 +47,7 @@ public class MainStartIndexing {
     }
 
     public void isFileExistInDataBase(List<Site> siteList) {
+
         for (Site siteFromConfig : siteList) {
             Iterator<SiteModel> siteModelIterator = siteRepository.findAll().iterator();
             while (siteModelIterator.hasNext()) {
@@ -58,6 +59,7 @@ public class MainStartIndexing {
                 }
             }
         }
+
     }
 
 }

@@ -34,38 +34,45 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public SearchResponse getSearchStatistics(int offset, int limit, String query, String site) {
 
-        SearchResponse responseNew = new SearchResponse();
-        if (query.length() != 0) {
-            MainSearch mainSearch = new MainSearch(pageRepository, lemmaRepository, indexRepository, siteRepository, sitesList);
-            mainSearch.searchPages(query, site);
-            int countOfPages = MainSearch.getCountOfPages();
-            responseNew.setCount(countOfPages);
-            responseNew.setResult(true);
-
-            List<DetailedSearchItem> detailed = new ArrayList<>();
-            try {
-                int i = 0;
-                for (Map.Entry<Page, Float> entry : MainSearch.getSortedMapByRelevance().entrySet()) {
-                    DetailedSearchItem detailedSearchItem = new DetailedSearchItem();
-                    Page page = entry.getKey();
-                    i++;
-                    if (i <= offset || i > (offset + limit)) continue;
-                    detailedSearchItem.setSite(page.getSite().getUrl().replaceFirst(".$", ""));
-                    detailedSearchItem.setSiteName(page.getSite().getName());
-                    detailedSearchItem.setUri(page.getPath());
-                    detailedSearchItem.setTitle(mainSearch.getPageTitle(page.getContent()));
-                    detailedSearchItem.setSnippet(mainSearch.getSnippet(page, query));
-                    detailedSearchItem.setRelevance(entry.getValue());
-                    detailed.add(detailedSearchItem);
-                }
-            } catch (NullPointerException | IOException ignored) {
-            }
-            responseNew.setData(detailed);
-        } else {
-            responseNew.setResult(false);
-            responseNew.setError("Задан пустой поисковый запрос");
+        SearchResponse response = new SearchResponse();
+        if (query.length() == 0) {
+            response.setResult(false);
+            response.setError("Задан пустой поисковый запрос");
+            return response;
         }
-        return responseNew;
+        MainSearch mainSearch = new MainSearch(pageRepository, lemmaRepository, indexRepository, siteRepository, sitesList);
+        mainSearch.searchPages(query, site);
+        int countOfPages = MainSearch.getCountOfPages();
+        response.setCount(countOfPages);
+        response.setResult(true);
+
+        List<DetailedSearchItem> detailedList = new ArrayList<>();
+        try {
+            int i = 0;
+            for (Map.Entry<Page, Float> entry : MainSearch.getSortedMapByRelevance().entrySet()) {
+                DetailedSearchItem detailedSearchItem = new DetailedSearchItem();
+                Page page = entry.getKey();
+                i++;
+                if (i <= offset || i > (offset + limit)) {
+                    continue;
+                }
+                fillDetailedList(detailedSearchItem, page, mainSearch, query, entry, detailedList);
+            }
+        } catch (NullPointerException | IOException ignored) {
+        }
+        response.setData(detailedList);
+
+        return response;
+    }
+
+    public void fillDetailedList(DetailedSearchItem detailedSearchItem, Page page, MainSearch mainSearch, String query, Map.Entry<Page, Float> entry, List<DetailedSearchItem> detailedList) throws IOException {
+        detailedSearchItem.setSite(page.getSite().getUrl().replaceFirst(".$", ""));
+        detailedSearchItem.setSiteName(page.getSite().getName());
+        detailedSearchItem.setUri(page.getPath());
+        detailedSearchItem.setTitle(mainSearch.getPageTitle(page.getContent()));
+        detailedSearchItem.setSnippet(mainSearch.getSnippet(page, query));
+        detailedSearchItem.setRelevance(entry.getValue());
+        detailedList.add(detailedSearchItem);
     }
 
 }

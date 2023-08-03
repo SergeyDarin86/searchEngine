@@ -31,37 +31,42 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<Site> sitesList = sites.getSites();
+
         for (Site site : sitesList) {
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl());
-
             ExtractorStatisticsFromDB extractorStatistics = new ExtractorStatisticsFromDB(siteRepository);
-
             try {
                 int pages = extractorStatistics.getCountOfPagesForSite(site.getUrl());
                 int lemmas = extractorStatistics.getCountOfLemmasForSite(site.getUrl());
-
-                item.setPages(pages);
-                item.setLemmas(lemmas);
-                item.setStatus(extractorStatistics.getStatusOfIndexing(site.getUrl()));
-                item.setError(extractorStatistics.getLastError(site.getUrl()));
-                item.setError(extractorStatistics.getLastError(site.getUrl()));
-                item.setStatusTime(extractorStatistics.getStatusTime(site.getUrl()));
-                total.setPages(total.getPages() + pages);
-                total.setLemmas(total.getLemmas() + lemmas);
-                detailed.add(item);
-
+                fillDetailedList(item, pages, lemmas, extractorStatistics, site, total, detailed);
             } catch (SQLException | ParseException ignored) {
             }
         }
 
         StatisticsResponse response = new StatisticsResponse();
         StatisticsData data = new StatisticsData();
+        fillStatisticsDataAndResponse(response, detailed, data, total);
+        return response;
+    }
+
+    public void fillDetailedList(DetailedStatisticsItem item, int pages, int lemmas, ExtractorStatisticsFromDB extractorStatistics, Site site, TotalStatistics total, List<DetailedStatisticsItem> detailed) throws SQLException, ParseException {
+        item.setPages(pages);
+        item.setLemmas(lemmas);
+        item.setStatus(extractorStatistics.getStatusOfIndexing(site.getUrl()));
+        item.setError(extractorStatistics.getLastError(site.getUrl()));
+        item.setError(extractorStatistics.getLastError(site.getUrl()));
+        item.setStatusTime(extractorStatistics.getStatusTime(site.getUrl()));
+        total.setPages(total.getPages() + pages);
+        total.setLemmas(total.getLemmas() + lemmas);
+        detailed.add(item);
+    }
+
+    public void fillStatisticsDataAndResponse(StatisticsResponse response, List<DetailedStatisticsItem> detailed, StatisticsData data, TotalStatistics total) {
         data.setTotal(total);
         data.setDetailed(detailed);
         response.setStatistics(data);
         response.setResult(true);
-        return response;
     }
 }

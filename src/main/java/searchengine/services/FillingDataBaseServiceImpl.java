@@ -103,7 +103,6 @@ public class FillingDataBaseServiceImpl implements Runnable {
     public synchronized void writeToPageEntity(HashSet<String> set, SiteModel siteModel, SiteParser parser, String parentURL) {
 
         Spliterator<String> siteModelIterator = set.spliterator();
-        ArrayList<Lemma> lemmaArrayList = new ArrayList<>();
 
         try {
             siteModelIterator.forEachRemaining(url -> {
@@ -117,7 +116,7 @@ public class FillingDataBaseServiceImpl implements Runnable {
                         String relativeLink = url.replaceAll(parentURL, "/");
                         page.setPath(relativeLink);
                         pageRepository.save(page);
-                        writeToLemmaEntity(pageCode, siteModel, url, page, lemmaArrayList);
+                        writeToLemmaEntity(pageCode, siteModel, url, page);
                     } catch (Exception ignored) {
                     }
                 }
@@ -128,8 +127,7 @@ public class FillingDataBaseServiceImpl implements Runnable {
 
     }
 
-    public void writeToLemmaEntity(int pageCode, SiteModel siteModel, String url, Page page,
-                                   ArrayList<Lemma> lemmaArrayList) throws IOException {
+    public void writeToLemmaEntity(int pageCode, SiteModel siteModel, String url, Page page) throws IOException {
 
         Session session = sessionFactory.openSession();
         Transaction transaction = session.beginTransaction();
@@ -153,8 +151,6 @@ public class FillingDataBaseServiceImpl implements Runnable {
                 }
 
                 session.saveOrUpdate(newLemmaForDB);
-                lemmaArrayList.add(newLemmaForDB);
-
                 writeToIndexEntity(page, newLemmaForDB, entry, session);
             }
             transaction.commit();

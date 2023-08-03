@@ -4,10 +4,10 @@ indexing-settings:
       name: Playback
     - url: https://www.svetlovka.ru/
       name: Svetlovka
-    - url: https://www.lutherancathedral.ru/
-      name: Lutherane
-    - url: https://ipfran.ru/
-      name: Ipfran
+#    - url: https://www.lutherancathedral.ru/
+#      name: Lutherane
+#    - url: https://ipfran.ru/
+#      name: Ipfran
 
 server:
   port: 8080

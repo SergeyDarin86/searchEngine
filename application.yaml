@@ -4,19 +4,21 @@ indexing-settings:
       name: Playback
     - url: https://www.svetlovka.ru/
       name: Svetlovka
-#    - url: https://www.lutherancathedral.ru/
-#      name: Lutherane
-#    - url: https://ipfran.ru/
-#      name: Ipfran
 
 server:
   port: 8080
+#  servlet:
+#    context-path: /final_project
 
 spring:
   datasource:
     username: root
     password: 16s11w86d
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+  mvc:
+    pathmatch:
+      matching-strategy : ANT_PATH_MATCHER
+
   jpa:
     properties:
       hibernate:

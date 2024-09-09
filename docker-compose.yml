@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  mysqldb:
+    image: mysql:8
+    restart: unless-stopped
+    networks:
+      - logger-network
+    environment:
+      - MYSQL_ROOT_PASSWORD=16s11w86d
+      - MYSQL_DATABASE=search_engine
+    ports:
+      - 3306:3306
+    volumes:
+      - db:/var/lib/mysql
+  app:
+    restart: on-failure
+    depends_on:
+      - mysqldb
+    build:
+      context: .
+    networks:
+      - logger-network
+    ports:
+      - 8080:8080
+    environment:
+      - spring_mvc_pathmatch_matching-strategy=ANT_PATH_MATCHER
+      - spring_jpa_properties_hibernate_dialect=org.hibernate.dialect.MySQL8Dialect
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=16s11w86d
+      - spring_jpa_hibernate_ddl-auto=update
+      - INDEXING_SETTINGS_SITES_0_URL=http://www.playback.ru/
+      - INDEXING_SETTINGS_SITES_0_NAME=Playback
+      - INDEXING_SETTINGS_SITES_1_URL=https://www.svetlovka.ru/
+      - INDEXING_SETTINGS_SITES_1_NAME=Svetlovka
+
+    volumes:
+      #      - .m2:/root/.m2
+      - ./application.yaml:/app/application.yaml
+    stdin_open: true
+    tty: true
+
+volumes:
+  db:
+
+networks:
+  logger-network:
+    driver: bridge

@@ -2,10 +2,15 @@ version: "3.8"
 
 services:
   mysqldb:
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     image: mysql:8
     restart: unless-stopped
     networks:
-      - logger-network
+      - engine-network
     environment:
       - MYSQL_ROOT_PASSWORD=16s11w86d
       - MYSQL_DATABASE=search_engine
@@ -16,11 +21,13 @@ services:
   app:
     restart: on-failure
     depends_on:
-      - mysqldb
+      mysqldb:
+        condition: service_healthy
+
     build:
       context: .
     networks:
-      - logger-network
+      - engine-network
     ports:
       - 8080:8080
     environment:
@@ -35,9 +42,9 @@ services:
       - INDEXING_SETTINGS_SITES_1_URL=https://www.svetlovka.ru/
       - INDEXING_SETTINGS_SITES_1_NAME=Svetlovka
 
-    volumes:
-      #      - .m2:/root/.m2
-      - ./application.yaml:/app/application.yaml
+    # Второй способ для чтения переменных из application.yaml путем создания volumes
+    #    volumes:
+    #      - ./application.yaml:/application.yaml
     stdin_open: true
     tty: true
 
@@ -45,5 +52,5 @@ volumes:
   db:
 
 networks:
-  logger-network:
+  engine-network:
     driver: bridge

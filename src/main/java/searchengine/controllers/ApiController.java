@@ -1,5 +1,9 @@
 package searchengine.controllers;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +18,7 @@ import searchengine.services.StatisticsService;
 
 @RestController
 @RequestMapping("/api")
+@Api("Search Engine API")
 public class ApiController {
 
     private final StatisticsService statisticsService;
@@ -42,11 +47,17 @@ public class ApiController {
     }
 
     @GetMapping("/stopIndexing")
+    @ApiOperation(value = "Start/Stop indexing",notes = "We can stop indexing process")
     public ResponseEntity<StartStopResponse> stopIndex() {
         return ResponseEntity.ok(startService.getStopResponse());
     }
 
     @PostMapping("/indexPage")
+    @ApiOperation(value = "add/update single Page to index by URL")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "successfully post if the path of page included in some site from configuration file"),
+            @ApiResponse(code = 200, message = "unsuccessfully operation because of page path")
+    })
     public ResponseEntity<IndexingSinglePageResponse> indexPage(@RequestParam String url) {
         return ResponseEntity.ok(singlePageService.getIndexingSinglePageResponse(url));
     }

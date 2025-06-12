@@ -1,7 +1,6 @@
-<div style="text-align: center;">
-<span style="color: blue; font-weight: bold; font-size: 40px;">Поисковый движок (Search Engine)</span>
-</div>
-
+<h1 align="center">
+  Поисковый движок (Search Engine)
+</h1>
 <h2 align="center">
   <img src="IMG/SearchEngineIcons.png" alt="drawing" width="50"/>
 </h2>
